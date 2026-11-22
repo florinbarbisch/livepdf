@@ -25,6 +25,11 @@ debug builds that logged every action into a visible text field. "Untested" mark
 | 18 | The headless Chrome viewer accepts DevTools mouse and keyboard input, and the page's JavaScript runs. Its accessibility tree does not expose field values. | `livepdf.chrome` spike, 2026-11-22 | Pixel checks in `ChromePdf`. |
 | 19 | After a click (press and release) on a knob that had `/A`, `/AA /D` and `/AA /E`, Chrome sent the following enter events and the next mouse-up to that knob, wherever the pointer went. The zones under the pointer got no enter events. | Debug log, headless Chrome, 2026-11-22: `E50` for every move from 50 to 57, then `D57 U50 U57` on the drop click. | Knobs only display; zones take `/D`, `/E` and `/U` but no `/A`. Lint `LP014`. |
 | 20 | `field.textColor = [...]` from JavaScript did not change the drawn text colour (set before or after the value). | Memory example: symbols stayed black. | One prepared field per colour, shown or hidden. |
+| 21 | `field.rect` reads back in Acrobat's order `[left, top, right, bottom]` in Chrome and Edge. Edge does not draw a field set bottom-first; Chrome draws both orders. | Debug text in the Pump bar, Chrome 157 and Edge 158 (visible window), 2026-11-22: set `[25,135,99,169]`, read `[25,169,99,135]`. | Always set `[left, top, right, bottom]`. `Sim` warns about bottom-first rects. |
+| 22 | Edge does not draw a field moved to fractional coordinates. | Pump bar with width `level * 3.7`: hidden in Edge, drawn after `Math.round`. | Round every coordinate. `Sim` warns. |
+| 23 | After a drag, Edge sends mouse up only to the field under the pointer (Chrome: the pressed field first, then that one). | Debug log, Edge 158: `E D E2 U2`. | Handle the drop in the `/U` of every zone. |
+| 24 | In a visible window on a scaled screen, screenshots are in device px but DevTools mouse events take CSS px. | 1.5x display: clicks landed 1.5x too far until `ChromePdf` divided by `devicePixelRatio`. | Fixed in `ChromePdf`; set `LIVEPDF_HEADFUL=1` for visible windows. |
+| 25 | Firefox (pdf.js) gives a click to the field drawn on top, does not apply `rect` changes, does not show fields hidden in the file, and sends no enter events. | Playwright Firefox 157, every example played. | Firefox is not supported; see `docs/browser-support.md`. |
 
 Other PDF tools:
 

@@ -139,14 +139,16 @@ def test_memory_next_click_turns_a_miss_back(build):
         assert s.eval('open') == [c]
 
 
-def _counts_from_bars(s, k):
-    ymax, ch = int(s.value('ymax')), s.eval('CFG.CH')
-    total = 0
-    for i in range(k):
+def _check_bars(s, k):
+    """The counts add up to n, and every bar is as tall as its count (to within the 1 pt rounding)."""
+    counts, ymax, ch = s.eval('counts'), int(s.value('ymax')), s.eval('CFG.CH')
+    assert len(counts) == k and max(counts) == ymax
+    for i, c in enumerate(counts):
         f = s.get(f'bar{i}')
-        if f.visible:
-            total += round((f.rect[3] - f.rect[1]) / ch * ymax)
-    return total
+        assert f.visible == (c > 0)
+        if c:
+            assert f.rect[3] - f.rect[1] == pytest.approx(c / ymax * ch, abs=1)
+    return sum(counts)
 
 
 @pytest.mark.parametrize('ds', range(5))
@@ -157,10 +159,10 @@ def test_histogram_bars_add_up(build, ds):
         for k in (2, 7, 23, 60):
             s.drag('knob', f'z{k}')
             assert s.eval('bins') == k
-            assert _counts_from_bars(s, k) == n
+            assert _check_bars(s, k) == n
             assert not any(s.visible(f'bar{i}') for i in range(k, 60))
             knob = s.get('knob').rect
-            assert (knob[0] + knob[2]) / 2 == pytest.approx(s.eval(f'kx({k})'))
+            assert (knob[0] + knob[2]) / 2 == pytest.approx(s.eval(f'kx({k})'), abs=0.5)
 
 
 def test_histogram_click_on_track_and_hover_after_drop(build):

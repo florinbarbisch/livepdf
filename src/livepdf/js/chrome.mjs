@@ -85,6 +85,10 @@ async function handle(m) {
       return null;
     }
     case 'wait': await sleep(m.ms); return null;
+    case 'eval': {
+      const r = await send('Runtime.evaluate', { expression: m.expr, returnByValue: true });
+      return r.result ? r.result.value : null;
+    }
     case 'shot': {
       const r = await send('Page.captureScreenshot', { format: 'png' });
       writeFileSync(m.path, Buffer.from(r.data, 'base64'));

@@ -5,7 +5,7 @@ var cur = CFG.r0, done = false, over = false, errs = [];
 var hearts = 3, coins = 0, streak = 0, best = 0;
 function fld(n) { return this.getField(n); }
 function vis(n, on) { var f = fld(n); if (f) f.display = on ? display.visible : display.hidden; }
-function place(n, x, y, s) { var f = fld(n); f.display = display.hidden; f.rect = [x, y, x + s, y + s]; f.display = display.visible; }
+function place(n, x, y, s) { var f = fld(n); f.display = display.hidden; x = Math.round(x); y = Math.round(y); f.rect = [x, y + s, x + s, y]; f.display = display.visible; }   // rect: [left, top, right, bottom], whole points
 function gauss() { var u = 1 - Math.random(), v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 function newPlot() {
   var t = Math.random(), xs, ys, r;
@@ -51,8 +51,8 @@ function drawHistory() {
   if (errs.length == 0) { vis("meanbar", false); vis("band", false); fld("stats").value = "no rounds yet"; return; }
   var my = cyv(sum / errs.length);
   var q1 = cyv(quart(errs, 0.25)), q3 = cyv(quart(errs, 0.75)), bd = fld("band");
-  bd.display = display.hidden; bd.rect = [CX + 0.5, Math.min(q1, q3) - 1, CX + CW - 0.5, Math.max(q1, q3) + 1]; bd.display = display.visible;
-  var b = fld("meanbar"); b.display = display.hidden; b.rect = [CX, my - 0.8, CX + CW, my + 0.8]; b.display = display.visible;
+  bd.display = display.hidden; bd.rect = [Math.round(CX), Math.round(Math.max(q1, q3) + 1), Math.round(CX + CW), Math.round(Math.min(q1, q3) - 1)]; bd.display = display.visible;
+  var b = fld("meanbar"); b.display = display.hidden; b.rect = [Math.round(CX), Math.round(my) + 1, Math.round(CX + CW), Math.round(my) - 1]; b.display = display.visible;
   fld("stats").value = errs.length + (errs.length == 1 ? " round" : " rounds") + "  ·  mean |error| " + f2(sabs / errs.length) + "  ·  bias " + sgn(sum / errs.length);
 }
 function drawHud() {

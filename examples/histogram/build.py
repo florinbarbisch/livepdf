@@ -95,9 +95,11 @@ k0 = sturges(len(DATA[0]['values']))
 c0 = counts(DATA[0]['values'], k0)
 for i in range(KMAX):
     bw = CW / k0
-    if i < k0 and c0[i]:
+    if i < k0 and c0[i]:                       # same whole-point rounding as place() in histogram.js
         h = c0[i] / max(c0) * CH
-        g.color_bar(f'bar{i}', CX + i * bw + 0.75, CTOP + CH - h, bw - 1.5, h, BLUE)
+        left, right = round(CX + i * bw + 0.75), round(CX + i * bw + bw - 0.75)
+        bottom, top = round(H - CTOP - CH), round(H - CTOP - CH + h)
+        g.color_bar(f'bar{i}', left, H - top, right - left, top - bottom, BLUE)
     else:
         g.color_bar(f'bar{i}', CX, CTOP + CH - 1, 1, 1, BLUE, hidden=True)
 for name, x in (('minusBg', CX + CW + 14), ('plusBg', CX + CW + 48)):

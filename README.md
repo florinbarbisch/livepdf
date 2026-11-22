@@ -2,6 +2,9 @@
 
 Build, lint and test interactive PDFs (games, quizzes, sliders, live charts and other teaching demos) that run in Chrome's built-in PDF viewer.
 
+**Runs in desktop Chrome and Edge.** Firefox, Safari and mobile viewers show the page without running the script
+(details: [docs/browser-support.md](docs/browser-support.md)).
+
 A PDF can carry form fields and JavaScript, and Chrome's viewer (PDFium) runs that script. Building such a file is
 the easy part. Testing it usually means clicking through a browser by hand or taking screenshots. livepdf moves
 most of that testing out of the browser:
@@ -74,36 +77,12 @@ eval level -> 5
 livepdf chrome pump.pdf "click btnPump" "wait 200" "ink status" "crop status out/status.png"
 ```
 
-## What the simulator models
+## Docs
 
-- The Acrobat JavaScript API subset that games use:
-  - `getField`, `display`, `color`
-  - `app.setInterval` and `app.setTimeOut`
-  - `app.alert`, `util.printf`, `console.println`, `event`
-  - field `value`, `valueAsString`, `display`, `rect`, `setFocus`, check boxes
-- Unknown field properties produce a warning.
-- Chrome's click sequence:
-  1. mouse move (enter, exit)
-  2. mouse down
-  3. commit and blur of the text field that had the focus (keystroke, validate, format)
-  4. focus
-  5. mouse up
-  6. activate (`/A`)
-
-  `order='acrobat'` commits before mouse down instead.
-- Chrome's hit testing, measured in headless Chrome:
-  - On overlapping fields, the first one in annotation order gets the click.
-  - A field hidden by a script keeps the clicks on its spot while it has the focus.
-
-  A warning names the field that really got the click.
-- PDFium's value coercion: `"0."` reads as the number `0`.
-- Warnings for field moves that Chrome would render wrong: a custom appearance without `/MK`, or a move while
-  visible.
-- `Date` and timers run on a virtual clock, and `Math.random` is seeded.
-
-It does not model rendering (`Sim.snapshot()` draws an approximation with PyMuPDF), the caret position, or
-Chrome's lost first clicks (`lost_clicks=1` emulates those). It also doesn't model Chrome's late or misrouted
-mouse-up events. Those show up only in `ChromePdf`.
+- [docs/simulator.md](docs/simulator.md): what `Sim` models, and what it does not
+- [docs/browser-support.md](docs/browser-support.md): which browsers run these PDFs, and how that was tested
+- [skills/live-pdf/references/chrome-pdfium-quirks.md](skills/live-pdf/references/chrome-pdfium-quirks.md): measured
+  viewer behaviour
 
 ## Claude Code skill
 

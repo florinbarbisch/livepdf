@@ -28,7 +28,7 @@ function fld(n) { return this.getField(n); }
 function draw() {
   var b = fld("level");
   b.display = display.hidden;
-  b.rect = [25, CFG.barBottom, 25 + Math.max(1, level * 3.7), CFG.barTop];
+  b.rect = [25, CFG.barTop, Math.round(25 + Math.max(1, level * 3.7)), CFG.barBottom];   // [left, top, right, bottom], whole points
   b.display = display.visible;
   fld("status").value = won ? "Full! You won." : "level " + level;
 }

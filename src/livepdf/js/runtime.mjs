@@ -58,12 +58,17 @@ function fieldObject(rec) {
     },
     get hidden() { return rec.display === 1; },
     set hidden(b) { rec.display = b ? 1 : 0; },
-    get rect() { return rec.rect.slice(); },
+    // Acrobat's order: [left, top, right, bottom]. Chrome and Edge both read it back that way (2026-11-22).
+    get rect() { const r = rec.rect; return [r[0], r[3], r[2], r[1]]; },
     set rect(r) {
       if (!Array.isArray(r) || r.length !== 4 || r.some(x => typeof x !== 'number' || !isFinite(x)))
         throw new TypeError(`${rec.name}.rect needs 4 finite numbers, got ${JSON.stringify(r)}`);
       rec.rect = [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])];
       rec.moves++;
+      if (r.some(v => v !== Math.round(v)))
+        warn(`${rec.name}.rect = ${JSON.stringify(r)} has fractional points: Edge (Adobe engine) does not draw a field moved to fractional coordinates (Chrome does). Round them with Math.round().`);
+      if (r[1] < r[3])
+        warn(`${rec.name}.rect = ${JSON.stringify(r)} is bottom-first. Use Acrobat's order [left, top, right, bottom]: Edge does not draw a field set bottom-first (Chrome does).`);
       if (rec.has_ap && !rec.mk_bg && !rec.mk_ca)
         warn(`${rec.name} moved: Chrome drops a moved field's custom /AP and repaints it from /MK; it has no /MK /BG or /CA, so it will look blank. Use color_bar() or dot().`);
       if (rec.display === 0)

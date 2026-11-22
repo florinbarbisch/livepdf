@@ -1,8 +1,13 @@
 // Histogram bin explorer. DATA[i] = {title, unit, note, values}; bins = current bin count.
-var ds = 0, bins = CFG.start, sturgesK = 0, fdK = 0, lo = 0, hi = 1, sorted = [];
+var counts = [], ds = 0, bins = CFG.start, sturgesK = 0, fdK = 0, lo = 0, hi = 1, sorted = [];
 function fld(n) { return this.getField(n); }
 function vis(n, on) { fld(n).display = on ? display.visible : display.hidden; }
-function place(n, r) { var f = fld(n); f.display = display.hidden; f.rect = r; f.display = display.visible; }
+// r = [left, bottom, right, top] in page points. field.rect takes Acrobat's order [left, top, right, bottom], in
+// whole points: Edge does not draw a field moved to fractional coordinates.
+function place(n, r) {
+  var f = fld(n), R = Math.round;
+  f.display = display.hidden; f.rect = [R(r[0]), R(r[3]), R(r[2]), R(r[1])]; f.display = display.visible;
+}
 function quantile(s, q) {
   var p = (s.length - 1) * q, i = Math.floor(p), j = Math.min(i + 1, s.length - 1);
   return s[i] + (s[j] - s[i]) * (p - i);
@@ -48,6 +53,7 @@ function draw() {
     c[Math.min(k - 1, b)]++;
   }
   for (i = 0; i < k; i++) if (c[i] > maxc) maxc = c[i];
+  counts = c;
   var bw = CFG.CW / k, gap = bw > 6 ? 1.5 : bw > 3 ? 0.6 : 0;
   for (i = 0; i < CFG.KMAX; i++) {
     if (i < k && c[i] > 0) {

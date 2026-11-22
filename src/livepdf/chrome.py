@@ -52,7 +52,7 @@ Rect = tuple[float, float, float, float]
 
 
 class ChromePdf:
-    def __init__(self, pdf: str | Path, *, headful: bool = False, warmup_clicks: int = 2, open_wait_ms: int = 2500,
+    def __init__(self, pdf: str | Path, *, headful: bool | None = None, warmup_clicks: int = 2, open_wait_ms: int = 2500,
                  hold_ms: int = 80, pace_ms: int = 350, workdir: str | Path | None = None):
         """Open ``pdf`` in a fresh headless Chrome.
 
@@ -60,6 +60,8 @@ class ChromePdf:
         an empty spot of the page first. ``pace_ms``: pause after every click/fill (lets PDFium repaint, and keeps
         double-click guards in the game from firing).
         """
+        if headful is None:                         # LIVEPDF_HEADFUL=1: a visible window (other engines, real DPI)
+            headful = os.environ.get('LIVEPDF_HEADFUL', '') == '1'
         self.doc: GameDoc = load(pdf)
         self.pdf = Path(pdf).resolve()
         self.hold_ms, self.pace_ms = hold_ms, pace_ms
@@ -68,19 +70,23 @@ class ChromePdf:
         self._n = 0
         self._last: Path | None = None
         w, h = int(self.doc.width * SCALE) + 80, int(self.doc.height * SCALE) + 80
+        if headful:                                # room for the browser's own toolbars (about 90 x 25 px)
+            w, h = w + 40, h + 130
         launch = {'chrome': find_chrome(), 'width': w, 'height': h, 'headful': headful}
         self._p = subprocess.Popen([node_exe(), str(DRIVER), json.dumps(launch)], stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', bufsize=1)
         self._read()                               # 'ready'
         url = self.pdf.as_uri() + '#toolbar=0&navpanes=0&zoom=100'
         self._call('open', url=url, waitMs=open_wait_ms)
-        if not self._calibrate():                  # Chrome sometimes shows a blank page on first open
+        # screenshots (and so the calibration) are in device px; mouse events take CSS px
+        self.dpr = float(self._call('eval', expr='devicePixelRatio') or 1)
+        if not self._wait_rendered(10_000):         # Chrome sometimes shows a blank page on first open; Edge is slow
             self._call('open', url=self.pdf.as_uri() + '?reload=1#toolbar=0&navpanes=0&zoom=100', waitMs=open_wait_ms)
-            if not self._calibrate():
+            if not self._wait_rendered(10_000):
                 raise RuntimeError(f'Chrome did not render the PDF; see {self._last}')
         for _ in range(warmup_clicks):
             x, y = self._blank_point()
-            self._call('click', **self._px(x, y), holdMs=hold_ms)
+            self._call('click', **self._mpx(x, y), holdMs=hold_ms)
             self._call('wait', ms=250)
 
     # ---------- plumbing ----------
@@ -133,6 +139,21 @@ class ChromePdf:
         """PDF point (bottom-left origin) to screen px."""
         return {'x': self.x0 + x * self.scale, 'y': self.y0 + (self.doc.height - y) * self.scale}
 
+    def _wait_rendered(self, ms: int) -> bool:
+        import time
+        end = time.time() + ms / 1000
+        while True:
+            if self._calibrate():
+                return True
+            if time.time() > end:
+                return False
+            self._call('wait', ms=500)
+
+    def _mpx(self, x: float, y: float) -> dict:
+        """PDF point to the CSS px that mouse events take (device px / devicePixelRatio)."""
+        p = self._px(x, y)
+        return {'x': p['x'] / self.dpr, 'y': p['y'] / self.dpr}
+
     def _rect(self, target: str | Rect) -> Rect:
         return tuple(self.doc.field(target).rect) if isinstance(target, str) else target
 
@@ -154,7 +175,7 @@ class ChromePdf:
             x, y = (r[0] + r[2]) / 2, (r[1] + r[3]) / 2
         else:
             x, y = target
-        self._call('click', **self._px(x, y), holdMs=self.hold_ms if hold_ms is None else hold_ms)
+        self._call('click', **self._mpx(x, y), holdMs=self.hold_ms if hold_ms is None else hold_ms)
         self._pos = (x, y)
         self.wait(self.pace_ms)
 
@@ -168,7 +189,7 @@ class ChromePdf:
             x, y = target
         x0, y0 = getattr(self, '_pos', (x, y))
         for i in range(1, steps + 1):
-            px = self._px(x0 + (x - x0) * i / steps, y0 + (y - y0) * i / steps)
+            px = self._mpx(x0 + (x - x0) * i / steps, y0 + (y - y0) * i / steps)
             self._call('mouse', type='mouseMoved', **px)
             self._call('wait', ms=16)
         self._pos = (x, y)
@@ -177,15 +198,15 @@ class ChromePdf:
              step_ms: int = 16) -> None:
         """Press the left button at ``start``, move to ``end`` with the button held, release there."""
         a, b = (self._centre(t) for t in (start, end))
-        self._call('mouse', type='mouseMoved', **self._px(*a))
+        self._call('mouse', type='mouseMoved', **self._mpx(*a))
         self._call('wait', ms=40)
-        self._call('mouse', type='mousePressed', **self._px(*a))
+        self._call('mouse', type='mousePressed', **self._mpx(*a))
         for i in range(1, steps + 1):
             self._call('wait', ms=step_ms)
-            px = self._px(a[0] + (b[0] - a[0]) * i / steps, a[1] + (b[1] - a[1]) * i / steps)
+            px = self._mpx(a[0] + (b[0] - a[0]) * i / steps, a[1] + (b[1] - a[1]) * i / steps)
             self._call('mouse', type='mouseMoved', button='left', buttons=1, **px)
         self._call('wait', ms=step_ms)
-        self._call('mouse', type='mouseReleased', button='left', buttons=0, **self._px(*b))
+        self._call('mouse', type='mouseReleased', button='left', buttons=0, **self._mpx(*b))
         self._pos = b
         self.wait(self.pace_ms)
 

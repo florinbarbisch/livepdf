@@ -85,6 +85,9 @@ See [references/livepdf-api.md](references/livepdf-api.md).
   footer. Tests warm up with clicks on an empty spot.
 - **Mouse down (`/AA /D`) and activate (`/A`) are reliable.** Mouse up (`/AA /U`) arrives late, or at the field
   clicked before. Do not build on it.
+- **Viewers.** Target desktop Chrome (PDFium) and Edge (Adobe engine). Firefox (pdf.js) breaks layered pages,
+  and Safari, iOS and Android viewers do not run the script (see `docs/browser-support.md` in the repo). In
+  Edge, set `rect` as `[left, top, right, bottom]` in whole points, or the field is not drawn.
 - **Drag and drop works.** While the button is held, enter and exit go to the fields under the pointer. On
   release, mouse up goes to the pressed field first, then to the one under the pointer. Grab at mouse down, follow
   on enter, drop on the first mouse up.
@@ -138,7 +141,7 @@ Move a marker safely:
 
 ```js
 function fld(n) { return this.getField(n); }
-function place(n, x, y, s) { var f = fld(n); f.display = display.hidden; f.rect = [x, y, x + s, y + s]; f.display = display.visible; }
+function place(n, x, y, s) { var f = fld(n); f.display = display.hidden; x = Math.round(x); y = Math.round(y); f.rect = [x, y + s, x + s, y]; f.display = display.visible; }   // rect: [left, top, right, bottom], whole points
 ```
 
 Drag and drop (examples/f1_slider, examples/histogram). Use one invisible zone per value with `/AA /D`, `/E`

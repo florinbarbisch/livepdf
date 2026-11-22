@@ -10,7 +10,7 @@ def test_pump_click_and_leak(pump_pdf):
         s.advance(500)
         assert s.eval('level') == 5
         assert s.value('status') == 'level 5'
-        assert s.get('level').rect[2] == pytest.approx(25 + 5 * 3.7)
+        assert s.get('level').rect[2] == round(25 + 5 * 3.7)            # whole points (Edge)
 
 
 def test_pump_win_swaps_buttons(pump_pdf):
