@@ -3,7 +3,7 @@
 Build, lint and test interactive PDFs (games, quizzes, sliders, live charts and other teaching demos) that run in Chrome's built-in PDF viewer.
 
 **Runs in desktop Chrome and Edge** (both tested). In Firefox the script runs but the page does not update
-properly; Safari was not tested (details: [docs/browser-support.md](docs/browser-support.md)).
+properly; iOS Safari and Android show a still page (details: [docs/browser-support.md](docs/browser-support.md)).
 
 A PDF can carry form fields and JavaScript, and Chrome's viewer (PDFium) runs that script. Building such a file is
 the easy part. Testing it usually means clicking through a browser by hand or taking screenshots. livepdf moves
