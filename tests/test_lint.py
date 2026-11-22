@@ -27,3 +27,15 @@ def test_swap_pair_with_separate_handlers(tmp_path):
     g.push_button('b', 10, 10, 80, 30, 'B', hidden=True, on_click='goB();')
     g.script('function goA() {} function goB() {}')
     assert codes(g.save(tmp_path / 'swap.pdf')) == ['LP013']
+
+
+def test_covered_click_field_warns_for_edge(tmp_path):
+    from livepdf import LivePdf
+    g = LivePdf(300, 200)
+    g.push_button('btn', 10, 10, 100, 30, 'Go', on_click='go();')
+    g.zone('z', 10, 60, 100, 30, D='go();')
+    for n, top in (('lab1', 15), ('lab2', 65)):                  # labels drawn over both
+        g.text_field(n, 10, top, 100, 20, 'label', size=10)
+    g.script('function go() {}')
+    found = [f for f in lint(load(g.save(tmp_path / 'c.pdf'))) if f.code == 'LP015']
+    assert [f.where for f in found] == ['btn']                  # the zone has its top copy

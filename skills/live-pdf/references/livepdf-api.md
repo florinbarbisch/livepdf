@@ -11,7 +11,7 @@ coordinates (y up from the bottom). `g.y(top)` converts between the two.
 | `line(x1, t1, x2, t2, color, width)` / `rect(x, top, w, h, fill=, stroke=)` / `circle(cx, ctop, r)` / `raw(ops)` | static drawing |
 | `text_field(name, x, top, w, h, value, size=, bold=, color=, align=0/1/2, readonly=True, max_len=, bg=, border=, hidden=, on_click=, V=..., K=..., ...)` | output label (read-only) or input |
 | `push_button(name, x, top, w, h, label, fill=YELLOW, appearance=None, hidden=, readonly=, on_click=, D=..., ...)` | clickable button with its own look; do not move it |
-| `zone(name, x, top, w, h, on_click=, D=, E=, ...)` | invisible clickable area |
+| `zone(name, x, top, w, h, on_click=, D=, E=, ..., top_copy=True)` | invisible clickable area; also written as `<name>~top` after all fields (Edge clicks the top field, Chrome the first) |
 | `color_bar(name, x, top, w, h, color, hidden=)` | filled rectangle that may move |
 | `dot(name, cx, ctop, size=14, color=, hidden=)` | round marker that may move |
 | `form_xobject(content, bbox, fonts=False)` | appearance stream (identical ones are shared) |
@@ -43,6 +43,7 @@ call order: later fields are drawn on top, but Chrome gives a click on overlappi
 | LP012 | overlapping clickable fields (the first one gets the click) |
 | LP013 | buttons taking turns on one spot with different actions |
 | LP014 | enter plus activate on one field (events follow the clicked field) |
+| LP015 | a clickable field covered by a later field: Edge gives the click to the cover |
 
 ## Simulate: `Sim(pdf, seed=1, lost_clicks=0, order='chrome', pace_ms=400, hold_ms=80, strict=True)`
 
@@ -65,7 +66,10 @@ call order: later fields are drawn on top, but Chrome gives a click on overlappi
     `isBoxChecked`, `checkThisBox`, colors as plain properties
   - `Date` and `Math.random` are deterministic.
 
-## Real Chrome: `ChromePdf(pdf, headful=False, warmup_clicks=2, pace_ms=350, workdir=None)`
+## Real Chrome or Edge: `ChromePdf(pdf, headful=None, warmup_clicks=2, pace_ms=350, workdir=None)`
+
+- `LIVEPDF_CHROME`: the browser (Chrome or `msedge.exe`). `LIVEPDF_HEADFUL=1`: a real window, started on a hidden
+  Windows desktop so it never takes the focus (needed for Edge's real PDF engine). `LIVEPDF_VISIBLE=1`: show it.
 
 - **Input:** `click(name | (x, y))`, `drag(start, end, steps=10)`, `fill(name, text, commit=)`, `type(text)`, `key(k)`, `wait(ms)`
 - **Pixels:**

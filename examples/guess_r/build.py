@@ -59,7 +59,7 @@ g.text(RX, 488, 8, 'Hearts: off by more than 0.10 costs one, within 0.02 earns o
                    'error within', color=(0.4, 0.4, 0.4))
 g.text(RX, 498, 8, '0.02 / 0.05 / 0.10. Streak = rounds in a row within 0.05; each streak round adds bonus coins.',
        color=(0.4, 0.4, 0.4))
-g.text(RX, 512, 8, 'Works in Chrome (and Acrobat). In Chrome the first click after opening only activates the page.',
+g.text(RX, 512, 8, 'Works in Chrome and Edge on a computer. In Chrome the first click after opening only activates the page.',
        color=(0.55, 0.55, 0.55))
 
 

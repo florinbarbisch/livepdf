@@ -26,6 +26,7 @@ YELLOW = (1, 0.90, 0)
 F_VISIBLE, F_HIDDEN = 4, 6
 FF_READONLY, FF_PUSHBUTTON = 1, 65536
 DOT_SCALE = 0.45   # Chrome draws the regenerated ZapfDingbats circle at about 0.45 of the field size
+TOP_SUFFIX = '~top'           # name suffix of a zone's top copy (see LivePdf.zone)
 
 ACTION_KEYS = ('E', 'X', 'D', 'U', 'Fo', 'Bl', 'K', 'F', 'V', 'C')
 
@@ -59,6 +60,7 @@ class LivePdf:
         self.objs: list[bytes] = []
         self.content: list[str] = []
         self.fields: list[tuple[str, float, float, float, float, str]] = []   # name, x0, y0, x1, y1 (PDF), extra
+        self._top: list[tuple[str, float, float, float, float, str]] = []     # zone copies written after all fields
         self.scripts: list[tuple[str, str]] = []
         self._forms: dict = {}
         self.helv = self.add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>')
@@ -117,7 +119,7 @@ class LivePdf:
     # ---------- fields ----------
     def widget(self, name: str, x: float, top: float, w: float, h: float, extra: str) -> None:
         """Raw widget; ``extra`` is the rest of the annotation dictionary."""
-        if any(f[0] == name for f in self.fields):
+        if any(f[0] == name for f in self.fields + self._top):
             raise ValueError(f'duplicate field name {name!r}')
         self.fields.append((name, x, self.y(top) - h, x + w, self.y(top), extra))
 
@@ -172,10 +174,18 @@ class LivePdf:
         self.widget(name, x, top, w, h, extra)
 
     def zone(self, name: str, x: float, top: float, w: float, h: float, *, on_click: str | None = None,
-             **triggers: str | None) -> None:
-        """Invisible clickable area (push button with an empty appearance)."""
+             top_copy: bool = True, **triggers: str | None) -> None:
+        """Invisible clickable area (push button with an empty appearance).
+
+        Chrome (PDFium) gives a click on overlapping fields to the FIRST one in the field order; Edge (Adobe
+        engine) gives it to the LAST one, drawn on top. So by default a zone is written twice with the same
+        actions: here, and as ``<name>~top`` after every other field. Scripts that show or hide a zone must
+        change both copies.
+        """
         ap = self.form_xobject('', (0, 0, w, h))
         self.push_button(name, x, top, w, h, appearance=ap, on_click=on_click, **triggers)
+        if top_copy:
+            self._top.append((f'{name}{TOP_SUFFIX}', *self.fields[-1][1:]))
 
     def color_bar(self, name: str, x: float, top: float, w: float, h: float, color=INK, *, hidden: bool = False) -> None:
         """Filled rectangle that scripts may move (``field.rect``) and show or hide. Not clickable."""
@@ -208,9 +218,10 @@ class LivePdf:
             return len(objs)
 
         content = add(self.stream('\n'.join(self.content)))
-        page_no = len(objs) + 1 + len(self.fields)
+        fields = self.fields + self._top
+        page_no = len(objs) + 1 + len(fields)
         widget_nos = [add(f'<< /Type /Annot /Subtype /Widget /T ({esc(n)}) /Rect [{x0:.2f} {y0:.2f} {x1:.2f} {y1:.2f}] '
-                          f'/P {page_no} 0 R {extra} >>') for n, x0, y0, x1, y1, extra in self.fields]
+                          f'/P {page_no} 0 R {extra} >>') for n, x0, y0, x1, y1, extra in fields]
         assert len(objs) + 1 == page_no
         refs = ' '.join(f'{n} 0 R' for n in widget_nos)
         add(f'<< /Type /Page /Parent {page_no + 1} 0 R /MediaBox [0 0 {self.W} {self.H}] /Contents {content} 0 R '

@@ -85,9 +85,10 @@ See [references/livepdf-api.md](references/livepdf-api.md).
   footer. Tests warm up with clicks on an empty spot.
 - **Mouse down (`/AA /D`) and activate (`/A`) are reliable.** Mouse up (`/AA /U`) arrives late, or at the field
   clicked before. Do not build on it.
-- **Viewers.** Target desktop Chrome (PDFium) and Edge (Adobe engine). Firefox (pdf.js) breaks layered pages,
-  and Safari, iOS and Android viewers do not run the script (see `docs/browser-support.md` in the repo). In
-  Edge, set `rect` as `[left, top, right, bottom]` in whole points, or the field is not drawn.
+- **Viewers.** Target desktop Chrome (PDFium) and Edge (Adobe engine); both pass all examples. Firefox (pdf.js)
+  runs the logic but does not show or move fields; Safari is untested (see `docs/browser-support.md`). For Edge,
+  set `rect` as `[left, top, right, bottom]` in whole points. Edge gives a click to the field drawn on top,
+  Chrome to the first: `LivePdf.zone()` writes each zone at both ends of the field order (lint `LP015`).
 - **Drag and drop works.** While the button is held, enter and exit go to the fields under the pointer. On
   release, mouse up goes to the pressed field first, then to the one under the pointer. Grab at mouse down, follow
   on enter, drop on the first mouse up.

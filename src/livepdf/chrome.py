@@ -19,6 +19,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -73,6 +74,9 @@ class ChromePdf:
         if headful:                                # room for the browser's own toolbars (about 90 x 25 px)
             w, h = w + 40, h + 130
         launch = {'chrome': find_chrome(), 'width': w, 'height': h, 'headful': headful}
+        if headful and sys.platform == 'win32' and os.environ.get('LIVEPDF_VISIBLE', '') != '1':
+            # an invisible desktop: the window never appears on screen or takes the focus (LIVEPDF_VISIBLE=1 to watch)
+            launch['launcher'] = [sys.executable, '-m', 'livepdf.desktop']
         self._p = subprocess.Popen([node_exe(), str(DRIVER), json.dumps(launch)], stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', bufsize=1)
         self._read()                               # 'ready'

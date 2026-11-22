@@ -37,7 +37,7 @@ for j, (label, k, col) in enumerate(bars):
     g.text(40, top + 12, 16, label, bold=(k == 'F'))
     g.rect(TL, top, FULL, 40, fill=LIGHT)
 g.text(40, 506, 10, 'In Chrome the first click after opening only activates the page. Needs a viewer that runs PDF '
-                    'JavaScript (tested: Chrome); others show a still image.', color=(0.5, 0.5, 0.5))
+                    'JavaScript (tested: Chrome, Edge); others show a still image.', color=(0.5, 0.5, 0.5))
 
 # one segment appearance per bar colour, inset 2 pt inside a 44 pt box (avoids repaint hairlines); the viewer
 # stretches it to the field width, so bar i is simply a field STEP * i wide

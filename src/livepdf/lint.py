@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from .build import TOP_SUFFIX
 from .inspect import GameDoc
 
 _GETFIELD = re.compile(r'getField\(\s*(["\'])(.*?)\1\s*(\+)?')
@@ -115,16 +116,17 @@ def lint(doc: GameDoc, syntax: bool = True) -> list[Finding]:
             add('LP011', 'info', f.name, 'hover-only interaction: Chrome sends no enter/exit to fields under a visible '
                                          'overlapping field that comes first')
 
-    # Chrome gives a click on overlapping fields to the FIRST one in annotation order (the last one is drawn on top)
-    clickable = [f for f in doc.fields if f.actions]
+    # Chrome gives a click on overlapping fields to the FIRST one in annotation order, Edge to the LAST one (drawn on
+    # top). A zone's top copy (LivePdf.zone, name + '~top') exists for that; overlaps with it repeat the original's.
+    clickable = [f for f in doc.fields if f.actions and not f.name.endswith(TOP_SUFFIX)]
     for i, a in enumerate(clickable):
         for b in clickable[i + 1:]:
             if _overlap(a.rect, b.rect) <= 0.5 * min(_area(a.rect), _area(b.rect)):
                 continue
             if not a.hidden and not b.hidden:
-                add('LP012', 'warning', b.name, f'overlaps "{a.name}", which comes first in the annotation order: Chrome '
-                                                f'gives clicks on the shared area to "{a.name}", although "{b.name}" is '
-                                                'drawn on top')
+                add('LP012', 'warning', b.name, f'overlaps "{a.name}": Chrome gives clicks on the shared area to the '
+                                                f'first in the field order ("{a.name}"), Edge to the one drawn on top '
+                                                f'("{b.name}")')
             if a.hidden != b.hidden and _click_js(a) != _click_js(b):
                 # a swap pair: one is shown instead of the other on the same spot
                 first = a if not a.hidden else b
@@ -132,6 +134,17 @@ def lint(doc: GameDoc, syntax: bool = True) -> list[Finding]:
                     f'share a spot but run different actions. After "{first.name}" is hidden by a script, Chrome keeps '
                     f'giving it the clicks on that spot while it has the focus (until a click elsewhere). Give both one '
                     'handler that decides by the game state')
+    # Edge gives a click to the field drawn on top, even one without actions (a label, a bar, a knob)
+    tops = {f.name[:-len(TOP_SUFFIX)] for f in doc.fields if f.name.endswith(TOP_SUFFIX)}
+    for a in clickable:
+        if a.name in tops:
+            continue
+        for b in doc.fields[a.order + 1:]:
+            if not b.actions and not b.hidden and _overlap(a.rect, b.rect) > 0.25 * min(_area(a.rect), _area(b.rect)):
+                add('LP015', 'warning', a.name, f'covered by "{b.name}", which comes later in the field order: Edge gives '
+                                                f'clicks there to "{b.name}". Use LivePdf.zone() (it adds a top copy) or '
+                                                'move the clickable field after it')
+                break
     return out
 
 

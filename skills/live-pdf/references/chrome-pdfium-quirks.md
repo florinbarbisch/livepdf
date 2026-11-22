@@ -29,7 +29,9 @@ debug builds that logged every action into a visible text field. "Untested" mark
 | 22 | Edge does not draw a field moved to fractional coordinates. | Pump bar with width `level * 3.7`: hidden in Edge, drawn after `Math.round`. | Round every coordinate. `Sim` warns. |
 | 23 | After a drag, Edge sends mouse up only to the field under the pointer (Chrome: the pressed field first, then that one). | Debug log, Edge 158: `E D E2 U2`. | Handle the drop in the `/U` of every zone. |
 | 24 | In a visible window on a scaled screen, screenshots are in device px but DevTools mouse events take CSS px. | 1.5x display: clicks landed 1.5x too far until `ChromePdf` divided by `devicePixelRatio`. | Fixed in `ChromePdf`; set `LIVEPDF_HEADFUL=1` for visible windows. |
-| 25 | Firefox (pdf.js) gives a click to the field drawn on top, does not apply `rect` changes, does not show fields hidden in the file, and sends no enter events. | Playwright Firefox 157, every example played. | Firefox is not supported; see `docs/browser-support.md`. |
+| 25 | Firefox (pdf.js) gives a click to the field drawn on top, does not apply `rect` changes, does not show fields hidden in the file, and sends no enter events. | Playwright Firefox 157, every example played. With top-copy zones the clicks and logic work, the display does not. | Firefox is not supported; see `docs/browser-support.md`. |
+| 26 | Edge gives a click to the field drawn on top (the last in the field order), even a knob or label without actions. Chrome gives it to the first. | F1 in Edge 158: a drag starting on the knob sent no event, one starting on the bare track worked. Zones moved last: Edge worked, Chrome did not. | `LivePdf.zone()` writes a `~top` copy after all fields. Lint `LP015`. |
+| 27 | A visible Chrome or Edge window stops painting when it is covered or the screen is locked, and shows a blank grey page. | Edge runs with other windows on top, and during a locked screen. | `ChromePdf` passes `--disable-features=CalculateNativeWinOcclusion` and starts headful browsers on a hidden desktop (`livepdf.desktop`), which also keeps them from taking the focus. |
 
 Other PDF tools:
 

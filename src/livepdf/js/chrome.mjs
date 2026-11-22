@@ -1,7 +1,7 @@
 // livepdf Chrome driver: starts headless Chrome, opens a PDF in Chrome's own PDF viewer and sends real mouse and
 // keyboard input through the DevTools protocol. No npm packages; needs Node 22+ (global WebSocket and fetch).
 // Protocol: argv[2] = JSON launch options; then one JSON command per line on stdin, one JSON reply per line.
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -14,7 +14,18 @@ const port = opt.port || 9300 + Math.floor(Math.random() * 600);
 const args = [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${opt.width},${opt.height}`,
   '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio'];
 if (!opt.headful) args.unshift('--headless=new');
-const chrome = spawn(opt.chrome, [...args, 'about:blank'], { stdio: 'ignore' });
+// A visible window keeps painting while covered or on a hidden desktop only without occlusion detection.
+else args.push('--disable-features=CalculateNativeWinOcclusion', '--disable-backgrounding-occluded-windows',
+  '--disable-renderer-backgrounding', '--disable-background-timer-throttling');
+let chrome = null, chromePid = null;
+if (opt.launcher) {          // e.g. [python, -m, livepdf.desktop]: start on an invisible desktop, prints the pid
+  const [exe, ...pre] = opt.launcher;
+  chrome = spawn(exe, [...pre, opt.chrome, ...args, 'about:blank'], { stdio: ['ignore', 'pipe', 'ignore'] });
+  chromePid = await new Promise((res, rej) => {
+    chrome.stdout.once('data', d => res(Number(String(d).trim())));
+    chrome.once('exit', () => rej(new Error('the desktop launcher exited before starting the browser')));
+  });
+} else chrome = spawn(opt.chrome, [...args, 'about:blank'], { stdio: 'ignore' });
 
 let ws, nextId = 0;
 const pending = new Map();
@@ -100,7 +111,8 @@ async function handle(m) {
 
 function shutdown() {
   try { ws && ws.close(); } catch { }
-  try { chrome.kill(); } catch { }
+  try { if (chrome) chrome.kill(); } catch { }
+  if (chromePid) try { execFileSync('taskkill', ['/PID', String(chromePid), '/T', '/F'], { stdio: 'ignore' }); } catch { }
   setTimeout(() => { try { rmSync(profile, { recursive: true, force: true }); } catch { } process.exit(0); }, 300);
 }
 
