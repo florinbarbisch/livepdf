@@ -13,8 +13,9 @@ engines:
 |---|---|---|---|---|
 | Chrome, desktop | PDFium | yes | **all work** | Chrome 157, headless and in a visible window: the `ChromePdf` test suite |
 | Edge, desktop | Adobe engine (since Edge 156) | yes | **all work** | Edge 158, real viewer on a hidden desktop: the `ChromePdf` test suite, plus every other example played |
-| Firefox, desktop | pdf.js | yes | **broken display**: clicks and game logic work, but shown or moved fields are not drawn | Firefox 157 (Playwright build), headless, every example played |
-| Safari, macOS | PDFKit | not expected | not supported (expected) | **inconclusive**: on a GitHub-hosted Mac (macOS 26.7) Safari drew every PDF blank, see below |
+| Firefox, desktop | pdf.js | yes | **broken display**: clicks and game logic work, but shown or moved fields are not drawn | Firefox 157 (Playwright build), headless, every example played; checked by hand in current Firefox: pump's text and button work, its bar does not move |
+| Safari, macOS | PDFKit | **no** | a still page | Safari 17 on macOS Sonoma 14.6.1 (virtual machine): the probe stayed at "NO JS", clicks on Pump did nothing |
+| Preview, macOS (the Mac's PDF app) | PDFKit | **no** | a still page | same machine, pump opened with "Open with Preview": clicks did nothing |
 | Safari, iOS (and every iOS browser) | PDFKit | **no** | a still page | iOS Simulator (iPhone 17 Pro) on a GitHub-hosted Mac: the probe stayed at "NO JS" |
 | Chrome on Android | hands the PDF to the Drive PDF viewer | **no** | a still page | Android 16 emulator (Chrome 133) on this PC: probe stayed at "NO JS", taps did nothing |
 | Samsung Internet | not tested | | | needs a Play Store sign-in in the emulator |
@@ -68,22 +69,21 @@ A PDF built for Firefox would need no moving fields, and pre-drawn states shown 
 
 ## Safari and mobile
 
-Safari runs only on macOS, and a macOS VM on non-Apple hardware breaks Apple's license, so Safari was probed on a
-GitHub-hosted Mac (a temporary workflow, removed again). Playwright's WebKit build is not Safari and has no PDF
-viewer.
+Playwright's WebKit build is not Safari and has no PDF viewer, so Safari was tested in macOS itself.
 
 - **iOS Safari** (iOS Simulator): the probe PDF, whose open script replaces "NO JS", still showed "NO JS". The
   page is drawn, the script does not run.
-- **macOS Safari** (macOS 26.7, opened with `open -a Safari`, screen captured with `screencapture`): every PDF
-  was blank white, including content drawn into the page, so the CI machine could not show PDFs at all. It
-  uses the same PDFKit as iOS, so no script support is expected. To confirm, open `out/pump.pdf` in Safari on a
-  real Mac and click Pump: if the level text changes, the script runs.
+- **macOS Safari** (Safari 17, macOS Sonoma 14.6.1 in a virtual machine, driven over VNC): the PDFs are drawn,
+  but the probe stayed at "NO JS" and pump stayed at "level 0" after five clicks. Preview behaves the same.
+  PDFKit also ignores the hidden flag: pump shows its Again button, which the file hides, on top of Pump.
+  A first try on a GitHub-hosted Mac (macOS 26.7) drew every PDF blank, so it could not answer this.
 - **Chrome on Android** (Android 16 emulator with Google Play, Chrome 133, on Windows; `adb` taps and
   screenshots): Chrome downloads the PDF and opens it in the Drive PDF viewer. The probe stayed at "NO JS" and
   taps did nothing. Newer Chrome versions have a built-in viewer; updating Chrome needs a Play Store sign-in.
 
-Where the script does not run, the reader sees the page as built. Guess r looked complete; the quiz showed empty
-answer rows, because its script fills in the question. Drawing the start state at build time helps there.
+Where the script does not run, the reader sees the page as built, with hidden fields shown (Safari, Preview).
+Guess r looked complete; the quiz showed empty answer rows, because its script fills in the question. Drawing
+the start state at build time helps there.
 
 ## How to rerun
 
