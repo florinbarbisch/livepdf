@@ -18,6 +18,22 @@ most of that testing out of the browser:
 `LivePdf` writes the PDF itself, with field types that survive Chrome's quirks (see
 [skills/live-pdf/references/chrome-pdfium-quirks.md](skills/live-pdf/references/chrome-pdfium-quirks.md)).
 
+## Try it
+
+Each example below is a release download. Open it in desktop Chrome or Edge: drag the file into a browser window.
+
+| PDF | What it is |
+|---|---|
+| [pump.pdf](https://github.com/florinbarbisch/livepdf/releases/latest/download/pump.pdf) | the smallest game: pump faster than the tank leaks |
+| [guess_r.pdf](https://github.com/florinbarbisch/livepdf/releases/latest/download/guess_r.pdf) | guess the correlation of 100 dots |
+| [f1_slider.pdf](https://github.com/florinbarbisch/livepdf/releases/latest/download/f1_slider.pdf) | drag precision and recall, watch F1 |
+| [reaction.pdf](https://github.com/florinbarbisch/livepdf/releases/latest/download/reaction.pdf) | a reaction-time test |
+| [quiz.pdf](https://github.com/florinbarbisch/livepdf/releases/latest/download/quiz.pdf) | a multiple-choice quiz |
+| [memory.pdf](https://github.com/florinbarbisch/livepdf/releases/latest/download/memory.pdf) | a memory card game |
+| [histogram.pdf](https://github.com/florinbarbisch/livepdf/releases/latest/download/histogram.pdf) | a live histogram: drag the knob to change the number of bins |
+
+All files: [latest release](https://github.com/florinbarbisch/livepdf/releases/latest).
+
 ## Install
 
 ```bash
